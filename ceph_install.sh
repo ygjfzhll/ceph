@@ -37,7 +37,7 @@ ceph-deploy new ceph1 ceph2 ceph3
 
 ###初始化监控
 ceph-deploy mon create-initial
-######
+######添加磁盘并创建osd
 ceph-deploy disk zap ceph1 /dev/sdb
 ceph-deploy disk zap ceph2 /dev/sdb
 ceph-deploy disk zap ceph3 /dev/sdb
@@ -76,21 +76,27 @@ ceph osd create pool ${poolname} ${pg_num} ${pgp_num}
 如果超过50个osd你需要自己明白权衡点，并且能自行计算pg_num的数量
 
 
-例如:创建一个chinapex的pool
+##例如:创建一个chinapex的pool
 ceph osd pool create chinapex 64
 
 
 #针对pool创建客户端账号
-ceph auth get-or-create client.rbd mon 'allow r' osd 'allow class-read object_prefix rbd_children,allow rwx pool=chinapex'
+ceph auth get-or-create client.chinapex mon 'allow r' osd 'allow class-read object_prefix rbd_children,allow rwx pool=chinapex'
 
 ##查看客户端账号信息
-ceph auth get client.rbd
+ceph auth get client.chinapex
+ceph auth get-key client.chinapex | base64
 
 ###导出客户端keyring
-ceph auth get client.rbd -o ./ceph.client.rbd.keyring
+ceph auth get client.chinapex -o ./ceph.client.chinapex.keyring
 
 ###pool启动RBD
-ceph osd pool application enable rbd chinapex
-
+ceph osd pool application enable rbd chinapex chinapex
+###创建rbd块设备,chinapex为pool名称，chinapexrbd为块名称
+rbd create chinapex/chinapexrbd --size 10240
+####创建快照
+rbd snap create --snap mysnap chinapex/chinapexrbd
+####回滚快照
+rbd snap rollback chinapex/chinapexrbd
 
 
