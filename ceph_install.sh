@@ -8,29 +8,33 @@ vim /etc/yum.repos.d/ceph.repo
 
 [ceph]
 name=ceph
-baseurl=http://mirrors.aliyun.com/ceph/rpm-15.2.4/el7//x86_64/
+baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/x86_64/
 gpgcheck=0
 priority=1
 
 [ceph-noarch]
-name=cephnoarch
-baseurl=http://mirrors.aliyun.com/ceph/rpm-15.2.4/el7//noarch/
+name=ceph-noarch
+baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/noarch/
 gpgcheck=0
 priority=1
 
 [ceph-source]
-name=Ceph source packages
-baseurl=http://mirrors.aliyun.com/ceph/rpm-15.2.4/el7//SRPMS
+name=ceph-source
+baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/SRPMS
 gpgcheck=0
 priority=1
+
 
 
 yum makecache
 
 ###admin节点免密登录node节点，有sudo权限
-yum install -y ceph-deploy ceph ceph-radosgw snappy leveldb gdisk python-argparse gperftools-libs python-pip
-pip3 install pecan werkzeug flask jwt route cherrypy
+yum install -y ceph-deploy ceph ceph-radosgw snappy leveldb gdisk python-argparse gperftools-libs python2-pip python34-pip-8.1.2-14.el7.noarch ntp
+pip3.4 install pecan werkzeug flask jwt route cherrypy
+yum erase firewalld* -y
 ####主节点
+#主节点免密登录
+ssh-copy-id -i ~/.ssh/id_rsa.pub root@ceph1
 mkdir -p /data/ceph-cluster
 cd /data/ceph-cluster
 ceph-deploy new ceph1 ceph2 ceph3
@@ -65,7 +69,17 @@ ceph-deploy mds create ceph1 ceph2 ceph3
 
 #########安装dashboard
 
-yum install ceph-mgr-dashboard -y
+1、在每个mgr节点安装
+# yum install ceph-mgr-dashboard -y
+2、开启mgr功能
+# ceph mgr module enable dashboard
+3、生成并安装自签名的证书
+# ceph dashboard create-self-signed-cert  
+4、创建一个dashboard登录用户名密码
+# ceph dashboard ac-user-create admin chinapex administrator 
+5、查看服务访问方式
+# ceph mgr services
+
 
 
 ########创建pool为客户端使用
