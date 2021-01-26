@@ -105,12 +105,22 @@ ceph auth get-key client.chinapex | base64
 ceph auth get client.chinapex -o ./ceph.client.chinapex.keyring
 
 ###pool启动RBD
-ceph osd pool application enable rbd chinapex chinapex
+ceph osd pool application enable chinapex rbd   ###use 'ceph osd pool application enable <pool-name> <app-name>', where <app-name> is 'cephfs', 'rbd', 'rgw', or freeform for custom applications
 ###创建rbd块设备,chinapex为pool名称，chinapexrbd为块名称
 rbd create chinapex/chinapexrbd --size 10240
 ####创建快照
 rbd snap create --snap mysnap chinapex/chinapexrbd
 ####回滚快照
 rbd snap rollback chinapex/chinapexrbd
+
+
+###ceph客户端使用
+yum install -y ceph-common
+ceph -s
+rbd  map  chinapex/chinapexrbd
+lsblk
+rbd showmapped
+
+
 
 
