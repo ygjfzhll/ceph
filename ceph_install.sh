@@ -121,6 +121,10 @@ rbd  map  chinapex/chinapexrbd
 lsblk
 rbd showmapped
 
+#服务端resize
+rbd resize --size 30000 chinapex/chinapexrbd
+#客户端ceph image扩容
+xfs_growfs /dev/rbd0
 
 
 
