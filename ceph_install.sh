@@ -188,4 +188,119 @@ mount -t ceph 192.168.234.133:6789,192.168.234.134:6789,192.168.234.135:6789:/ /
 
 
 ##########ceph对象存储搭建及使用
+###安装ceph-radosgw 软件包到 ceph1 中
+ceph-deploy install --rgw ceph1
+##将配置文件、密钥文件同步到 ceph-e
+ceph-deploy --overwrite-conf admin ceph1
+###启动一个RGW服务
+ceph-deploy rgw create ceph1
+
+###修改RGW的默认端口（默认7480）
+vim /etc/ceph/ceph.conf  ###末尾追加
+[client.rgw.ceph1]
+host = ceph1
+rgw_frontends = "civetweb port=80"
+
+##重启服务
+systemctl restart ceph-radosgw.target
+
+
+###使用第三方软件访问
+#登陆 ceph1（RGW）创建用户
+radosgw-admin user create --uid="radosgw" --display-name="First User" --system
+###记住如下信息
+    "keys": [
+        {
+            "user": "radosgw",
+            "access_key": "B8A4ICWZ5310TI90A2EY",
+            "secret_key": "ZHB7oYyBfeyVMdCgOpaRq9LUh1cjiGfMFozShQXJ"
+        }
+
+#####授权用户，允许 radosgw 读写 users 信息：
+radosgw-admin caps add --uid=radosgw --caps="users=*"
+
+####允许 radosgw 读写所有的usage信息：
+radosgw-admin caps add --uid=radosgw --caps="usage=read,write"
+
+###创建子用户，做为后面 swift 客户端访问时使用
+radosgw-admin subuser create --uid=radosgw --subuser=radosgw:swift --access=full
+####创建子用户密钥
+radosgw-admin key create --subuser=radosgw:swift --key-type=swift --gen-secret
+#####记住如下信息
+   "swift_keys": [
+        {
+            "user": "radosgw:swift",
+            "secret_key": "5pJjBi1aWdeVW3qzsOLN6AEF2Pn5I9trAtSunY7Z"
+        }
+
+
+
+#####客户端使用
+#在 ceph-client 安装 s3 客户端软件
+yum -y install s3cmd.noarch
+
+s3cmd --configure
+
+
+[root@ceph-client ~]# s3cmd --configure
+
+Enter new values or accept defaults in brackets with Enter.
+Refer to user manual for detailed description of all options.
+
+Access key and Secret key are your identifiers for Amazon S3. Leave them empty for using the env variables.
+Access Key: B8A4ICWZ5310TI90A2EY
+Secret Key: ZHB7oYyBfeyVMdCgOpaRq9LUh1cjiGfMFozShQXJ
+Default Region [US]: 
+
+Use "s3.amazonaws.com" for S3 Endpoint and not modify it to the target Amazon S3.
+S3 Endpoint [s3.amazonaws.com]: 192.168.234.133
+
+Use "%(bucket)s.s3.amazonaws.com" to the target Amazon S3. "%(bucket)s" and "%(location)s" vars can be used
+if the target S3 system supports dns based buckets.
+DNS-style bucket+hostname:port template for accessing a bucket [%(bucket)s.s3.amazonaws.com]: %(bucket)s.192.168.234.133 bucket
+
+Encryption password is used to protect your files from reading
+by unauthorized persons while in transfer to S3
+Encryption password: 
+Path to GPG program [/usr/bin/gpg]: 
+
+When using secure HTTPS protocol all communication with Amazon S3
+servers is protected from 3rd party eavesdropping. This method is
+slower than plain HTTP, and can only be proxied with Python 2.7 or newer
+Use HTTPS protocol [Yes]: no
+
+On some networks all internet access must go through a HTTP proxy.
+Try setting it here if you can't connect to S3 directly
+HTTP Proxy server name: 
+
+New settings:
+  Access Key: B8A4ICWZ5310TI90A2EY
+  Secret Key: ZHB7oYyBfeyVMdCgOpaRq9LUh1cjiGfMFozShQXJ
+  Default Region: US
+  S3 Endpoint: 192.168.234.133
+  DNS-style bucket+hostname:port template for accessing a bucket: %(bucket)s.192.168.234.133 bucket
+  Encryption password: 
+  Path to GPG program: /usr/bin/gpg
+  Use HTTPS protocol: False
+  HTTP Proxy server name: 
+  HTTP Proxy server port: 0
+
+Test access with supplied credentials? [Y/n] y
+Please wait, attempting to list all buckets...
+Success. Your access key and secret key worked fine :-)
+
+Now verifying that encryption works...
+Not configured. Never mind.
+
+Save settings? [y/N] y
+Configuration saved to '/root/.s3cfg'
+
+
+
+########dashboard启用RGW
+#查看key
+radosgw-admin user info --uid=radosgw
+ceph dashboard set-rgw-api-access-key B8A4ICWZ5310TI90A2EY
+ceph dashboard set-rgw-api-secret-key ZHB7oYyBfeyVMdCgOpaRq9LUh1cjiGfMFozShQXJ
+ceph dashboard set-rgw-api-ssl-verify False
 
