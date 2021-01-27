@@ -128,3 +128,64 @@ xfs_growfs /dev/rbd0
 
 
 
+
+
+
+####cephfs文件系统应用
+清理删除 cephfs
+systemctl stop ceph-mds@$HOSTNAME  
+systemctl status ceph-mds@$HOSTNAME 
+
+查看cephfs 信息
+## ceph fs ls 
+## ceph mds stat
+
+## ceph mon dump
+dumped monmap epoch 1
+##设置mds状态为失败
+ceph mds fail 0    
+##删除mds文件系统
+ceph fs rm leadorfs --yes-i-really-mean-it      
+##删除元数据文件夹
+ceph osd pool delete cephfs_metadata cephfs_metadata --yes-i-really-really-mean-it   
+ceph osd pool delete cephfs_data cephfs_data --yes-i-really-really-mean-it   
+再次查看集群状态
+## ceph mds stat
+## eph mds  dump
+
+#重建 cephfs
+#启动所有mds服务
+systemctl start ceph-mds@$HOSTNAME
+systemctl status ceph-mds@$HOSTNAME
+
+#验证：
+ceph mds stat
+
+###重建cephfs
+ceph osd pool create cephfs_data 512
+ceph osd pool create cephfs_metadata 512
+ceph fs new ptcephfs cephfs_metadata cephfs_data
+##验证集群状态
+## ceph mds stat
+## ceph mds dump
+
+
+#集群健康状态
+ceph -w
+
+
+##########挂载CephFS （客户端节点执行）
+##ceph auth get-or-create client.admin，获取secret
+mount -t ceph 192.168.234.133:6789,192.168.234.134:6789,192.168.234.135:6789:/ /cephfs/ -o name=admin,secret=AQALog9g8suNBxAA8S57o7Rs7N/GQPi7F6MQ3w==
+
+
+
+
+
+
+
+
+
+
+##########ceph对象存储搭建及使用
+
