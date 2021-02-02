@@ -29,7 +29,7 @@ priority=1
 yum makecache
 
 ###admin节点免密登录node节点，有sudo权限
-yum install -y ceph-deploy ceph ceph-radosgw snappy leveldb gdisk python-argparse gperftools-libs python2-pip python34-pip-8.1.2-14.el7.noarch ntp
+yum install -y ceph-deploy ceph ceph-radosgw snappy leveldb gdisk python-argparse gperftools-libs python2-pip python34-pip-8.1.2-14.el7.noarch
 pip3.4 install pecan werkzeug flask jwt route cherrypy
 yum erase firewalld* -y
 ####主节点
@@ -74,7 +74,9 @@ ceph-deploy mds create ceph1 ceph2 ceph3
 2、开启mgr功能
 # ceph mgr module enable dashboard
 3、生成并安装自签名的证书
-# ceph dashboard create-self-signed-cert  
+# ceph dashboard create-self-signed-cert
+#禁用https
+ceph config set mgr mgr/dashboard/ssl false  
 4、创建一个dashboard登录用户名密码
 # ceph dashboard ac-user-create admin chinapex administrator 
 5、查看服务访问方式
@@ -304,3 +306,17 @@ ceph dashboard set-rgw-api-access-key B8A4ICWZ5310TI90A2EY
 ceph dashboard set-rgw-api-secret-key ZHB7oYyBfeyVMdCgOpaRq9LUh1cjiGfMFozShQXJ
 ceph dashboard set-rgw-api-ssl-verify False
 
+
+
+
+
+
+
+
+#############添加节点机器及osd
+ceph-deploy new ceph1 ceph2 ceph3 ceph-client
+ceph-deploy disk zap ceph-client /dev/sdb
+ceph-deploy osd create --data  /dev/sdb  ceph-client
+scp -r ceph.client.admin.keyring ceph.conf ceph-client:/etc/ceph/
+ceph-deploy --overwrite-conf mon create ceph-client
+ceph-deploy --overwrite-conf admin ceph-client

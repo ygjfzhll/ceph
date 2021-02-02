@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ceph-mysql-pv
+  namespace: ceph
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  rbd:
+    monitors:
+      - 192.168.0.22:6789,192.168.0.23:6789,192.168.0.24:6789
+    pool: dev
+    image: zhuoyue_mysql_master
+    user: admin
+    secretRef:
+      name: ceph-secret
+    fsType: xfs
+    readOnly: false
+  persistentVolumeReclaimPolicy: Recycle
